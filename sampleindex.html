@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management System</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f9; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; margin-bottom: 20px; }
+        h2 { color: #333; margin-top: 0; }
+        label { display: block; margin: 10px 0 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 15px; font-size: 16px; }
+        button:hover { background: #218838; }
+        #searchBtn { background: #007bff; }
+        #searchBtn:hover { background: #0069d9; }
+        .message { margin-top: 15px; padding: 10px; border-radius: 4px; display: none; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .result-box { background: #e9ecef; padding: 15px; border-radius: 4px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>User Sign-Up</h2>
+    <form id="signupForm">
+        <label>First Name*</label>
+        <input type="text" name="first_name" required>
+        
+        <label>Surname*</label>
+        <input type="text" name="surname" required>
+        
+        <label>Other Name</label>
+        <input type="text" name="other_name">
+        
+        <label>Residential Address*</label>
+        <textarea name="address" rows="3" required></textarea>
+        
+        <label>Gender*</label>
+        <select name="gender" required>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+        </select>
+        
+        <label>Phone Number*</label>
+        <input type="text" name="phone_number" required>
+        
+        <label>Guidance</label>
+        <textarea name="guidance" rows="2"></textarea>
+        
+        <button type="submit">Register User</button>
+    </form>
+    <div id="signupMsg" class="message"></div>
+</div>
+
+<div class="container">
+    <h2>Retrieve User Info</h2>
+    <label>Enter Registered Phone Number</label>
+    <input type="text" id="searchPhone" placeholder="e.g. 1234567890">
+    <button id="searchBtn">Search Details</button>
+    
+    <div id="userDetails" class="result-box" style="display:none;">
+        </div>
+</div>
+
+<script>
+    // --- Handle Sign Up ---
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const msgDiv = document.getElementById('signupMsg');
+
+        try {
+            const response = await fetch('signup.php', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            
+            msgDiv.textContent = result.message;
+            msgDiv.className = `message ${result.status}`;
+            msgDiv.style.display = 'block';
+            
+            if(result.status === 'success') e.target.reset();
+        } catch (err) {
+            console.error(err);
+        }
+    });
+
+    // --- Handle Retrieval ---
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+        const phone = document.getElementById('searchPhone').value;
+        const resultBox = document.getElementById('userDetails');
+
+        if(!phone) return alert("Please enter a phone number");
+
+        try {
+            const response = await fetch(`get_user.php?phone=${phone}`);
+            const result = await response.json();
+
+            if(result.status === 'success') {
+                const user = result.data;
+                resultBox.innerHTML = `
+                    <strong>Name:</strong> ${user.first_name} ${user.other_name} ${user.surname}<br>
+                    <strong>Address:</strong> ${user.address}<br>
+                    <strong>Gender:</strong> ${user.gender}<br>
+                    <strong>Guidance:</strong> ${user.guidance || 'N/A'}
+                `;
+                resultBox.style.display = 'block';
+            } else {
+                resultBox.innerHTML = `<span style="color:red">${result.message}</span>`;
+                resultBox.style.display = 'block';
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    });
+</script>
+
+</body>
+</html>
